@@ -22,16 +22,16 @@
 
 <body>
   <canvas id="glslCanvas" data-fragment-url="shaders/Hatching.frag" width="800" height="600"
-    data-textures="data/MonaLisa.jpg, data/hatch_0.jpg, data/hatch_1.jpg, data/hatch_2.jpg, data/hatch_3.jpg, data/hatch_4.jpg, data/hatch_5.jpg"></canvas>
+    data-textures="data/Grandma-1920.png, data/reference/hatch_0.jpg, data/reference/hatch_1.jpg, data/reference/hatch_2.jpg, data/hatch-1/hatch_4.png, data/hatch-1/hatch_5.png, data/hatch-1/hatch_6.png"></canvas>
 </body>
 <script>
   var canvas = document.getElementById("glslCanvas");
   var sandbox = new GlslCanvas(canvas);
   var texCounter = 0;
   var sandbox_content = "";
+  var sandbox_thumbnail = "";
   var sandbox_title = "";
   var sandbox_author = "";
-  var sandbox_thumbnail = "";
   canvas.style.width = '100%';
   canvas.style.height = '100%';
 </script>
