@@ -17,7 +17,7 @@ uniform float u_time;
 #define iResolution u_resolution
 #define iMouse u_mouse
 #define fragCoord gl_FragCoord.xy
-uniform sampler2D u_tex0;//../../data/wave_wave.jpg
+uniform sampler2D u_tex0;//../data/wave_wave.jpg
 uniform sampler2D u_buffer0;//FBO from previous iterated frame
 
 vec3 rgb2hsl(vec3 c);
@@ -56,34 +56,9 @@ void main()
 {
   vec2 imageUV=fragCoord.xy/iResolution.xy;
   
-  // // --- Input Image Aspect Ratio Correction Snippet ---
-  vec2 st=fragCoord.xy/iResolution.xy;
-  vec2 uv=st;
-  
-  float currentAspect=iResolution.x/iResolution.y;
-  float targetAspect=16./9.;
-  
-  if(currentAspect>targetAspect){
-    // 螢幕太寬，裁切左右兩側
-    float scale=currentAspect/targetAspect;
-    uv.x=(uv.x-.5)*scale+.5;
-  }else{
-    // 螢幕太窄，裁切上下兩側
-    float scale=targetAspect/currentAspect;
-    uv.y=(uv.y-.5)*scale+.5;
-  }
-  
-  float mask=step(0.,uv.x)*step(uv.x,1.)*
-  step(0.,uv.y)*step(uv.y,1.);
-  
-  // 如果計算後的 uv 在 [0,1] 範圍外，就畫黑色
-  // if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
-    //   gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-    //   return;
-  // }
-  
-  // vec2 imageUV=uv;
-  // // ---------------------------------
+  vec2 correctedUV=imageUV;
+  float aspectRatio=iResolution.x/iResolution.y;
+  correctedUV.x*=aspectRatio;
   
   #ifdef EVOLVE_FROM_GRADIENT
   if(iTime<.1){// A small threshold to detect the first frame
@@ -97,13 +72,13 @@ void main()
     // Mix colors based on the vertical position (imageUV.y)
     vec3 gradient=mix(colorBottom,colorTop,imageUV.y);
     
-    gl_FragColor=vec4(gradient,1.)*mask;
+    gl_FragColor=vec4(gradient,1.);
     
     return;// Stop further processing for the first frame
   }
   #endif
   
-  vec2 testUV=imageUV*mask;
+  vec2 testUV=imageUV;
   
   #ifdef EVERY_PIXEL_SAME_COLOR
   testUV=vec2(1.,1.);
@@ -137,7 +112,12 @@ void main()
       vec2 triPoint1=vec2(Random_Final(testUV,iTime*1.),Random_Final(testUV,iTime*2.));
       vec2 triPoint2=vec2(Random_Final(testUV,iTime*3.),Random_Final(testUV,iTime*4.));
       vec2 triPoint3=vec2(Random_Final(testUV,iTime*5.),Random_Final(testUV,iTime*6.));
-      isInShape=pointInTriangle(triPoint1,triPoint2,triPoint3,imageUV);
+      
+      triPoint1.x*=aspectRatio;
+      triPoint2.x*=aspectRatio;
+      triPoint3.x*=aspectRatio;
+      
+      isInShape=pointInTriangle(triPoint1,triPoint2,triPoint3,correctedUV);
     }
     currentIndex++;
     #endif
@@ -147,7 +127,10 @@ void main()
       vec2 center=vec2(Random_Final(testUV,iTime*1.),Random_Final(testUV,iTime*2.));
       float r=Random_Final(testUV,iTime*3.);
       float radius=MIN_CIRCLE_RADIUS+r*(MAX_CIRCLE_RADIUS-MIN_CIRCLE_RADIUS);
-      isInShape=pointInCircle(center,radius,imageUV);
+      
+      center.x*=aspectRatio;
+      
+      isInShape=pointInCircle(center,radius,correctedUV);
     }
     currentIndex++;
     #endif
@@ -156,7 +139,11 @@ void main()
     if(shapeChoice==currentIndex){
       vec2 pos=vec2(Random_Final(testUV,iTime*1.),Random_Final(testUV,iTime*2.));
       vec2 size=vec2(Random_Final(testUV,iTime*3.),Random_Final(testUV,iTime*4.))*.4;
-      isInShape=pointInRect(pos,size,imageUV);
+      
+      pos.x*=aspectRatio;
+      size.x*=aspectRatio;
+      
+      isInShape=pointInRect(pos,size,correctedUV);
     }
     currentIndex++;
     #endif
@@ -165,7 +152,11 @@ void main()
     if(shapeChoice==currentIndex){
       vec2 center=vec2(Random_Final(testUV,iTime*1.),Random_Final(testUV,iTime*2.));
       vec2 radii=vec2(Random_Final(testUV,iTime*3.),Random_Final(testUV,iTime*4.))*.3;
-      isInShape=pointInEllipse(center,radii,imageUV);
+      
+      center.x*=aspectRatio;
+      radii.x*=aspectRatio;
+      
+      isInShape=pointInEllipse(center,radii,correctedUV);
     }
     currentIndex++;
     #endif
@@ -233,7 +224,7 @@ if(dotFactor>0.&&isInShape)
   if(testDiff<prevDiff)
   {
     vec3 finalColor=mix(prevColor.rgb,testColor.rgb,dotFactor);
-    gl_FragColor=mix(gl_FragColor,vec4(finalColor,1.),FADE_IN_SPEED)*mask;
+    gl_FragColor=mix(gl_FragColor,vec4(finalColor,1.),FADE_IN_SPEED);
     // gl_FragColor=vec4(finalColor,1.);
   }
   else
@@ -242,7 +233,7 @@ if(dotFactor>0.&&isInShape)
     if(mutationChance<MUTATION_RATE)
     {
       vec3 finalColor=mix(prevColor.rgb,testColor.rgb,dotFactor);
-      gl_FragColor=mix(gl_FragColor,vec4(finalColor,1.),FADE_IN_SPEED)*mask;
+      gl_FragColor=mix(gl_FragColor,vec4(finalColor,1.),FADE_IN_SPEED);
       // gl_FragColor=vec4(finalColor,1.);
     }
   }
@@ -271,7 +262,7 @@ if(isInShape)
   float testDiff=length(trueColor.rgb-testColor.rgb);
   if(testDiff<prevDiff)
   {
-    gl_FragColor=mix(gl_FragColor,testColor,FADE_IN_SPEED)*mask;
+    gl_FragColor=mix(gl_FragColor,testColor,FADE_IN_SPEED);
     // gl_FragColor=testColor;// Direct replacement, no mix
   }
   else
@@ -279,7 +270,7 @@ if(isInShape)
     float mutationChance=Random_Final(imageUV,iTime*15.);
     if(mutationChance<MUTATION_RATE)
     {
-      gl_FragColor=mix(gl_FragColor,testColor,FADE_IN_SPEED)*mask;
+      gl_FragColor=mix(gl_FragColor,testColor,FADE_IN_SPEED);
       // gl_FragColor=testColor;// Direct replacement
     }
   }

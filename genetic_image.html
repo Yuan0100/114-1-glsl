@@ -7,6 +7,16 @@
   <script type="text/javascript"
     src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
   <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      /* 避免出現捲軸 */
+    }
+
     body {
       background: #101515;
     }
@@ -16,6 +26,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      width: 100%;
+      aspect-ratio: 2880 / 1620;
     }
   </style>
 </head>
@@ -32,8 +44,8 @@
   var sandbox_thumbnail = "";
   var sandbox_title = "";
   var sandbox_author = "";
-  canvas.style.width = '100%';
-  canvas.style.height = '100%';
+  // canvas.style.width = '100%';
+  // canvas.style.height = '100%';
 </script>
 
 </html>
