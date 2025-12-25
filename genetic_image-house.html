@@ -27,23 +27,35 @@
       left: 50%;
       transform: translate(-50%, -50%);
       width: 100%;
-      aspect-ratio: 2880 / 1620;
+      /* aspect-ratio: 5712 / 4284; */
+      aspect-ratio: 4 / 3;
     }
   </style>
 </head>
 
 <body>
-  <canvas id="glslCanvas" data-fragment-url="shaders/GeneticImage-cover.frag" width="800" height="600"
+  <canvas id="glslCanvas" data-fragment-url="shaders/GeneticImage-house.frag" width="800" height="600"
     data-textures="data/wave_wave.jpg"></canvas>
 </body>
 <script>
   var canvas = document.getElementById("glslCanvas");
   var sandbox = new GlslCanvas(canvas);
-  var texCounter = 0;
-  var sandbox_content = "";
-  var sandbox_thumbnail = "";
-  var sandbox_title = "";
-  var sandbox_author = "";
+  function updateGridSize() {
+    // 設定每個格子大約佔用的像素大小 (例如 15px)
+    // 數值越小，格子越密；數值越大，格子越大
+    var cellPixelSize = .1;
+
+    // 根據畫布寬度計算 grid size (代表寬度方向有多少格)
+    // 使用 canvas.clientWidth 確保取得實際顯示寬度
+    var gridSize = canvas.clientWidth / cellPixelSize;
+
+    // 將計算結果傳送給 Shader 中的 uniform float u_grid_size
+    sandbox.setUniform("u_grid_size", gridSize);
+  }
+  setTimeout(updateGridSize, 100);
+  window.addEventListener('resize', function () {
+    updateGridSize();
+  });
   // canvas.style.width = '100%';
   // canvas.style.height = '100%';
 </script>
