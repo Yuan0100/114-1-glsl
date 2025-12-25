@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>GlslCanvas</title>
+  <script type="text/javascript"
+    src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
+  <style>
+    body {
+      background: #101515;
+    }
+
+    #glslCanvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="glslCanvas" data-fragment-url="shaders/Image1DBlurFBO.frag" data-textures="data/Grandma-1920.png"
+    width="640" height="360"></canvas>
+</body>
+<script>
+  var canvas = document.getElementById("glslCanvas");
+  var sandbox = new GlslCanvas(canvas);
+  var texCounter = 0;
+  var sandbox_content = "";
+  var sandbox_thumbnail = "";
+  var sandbox_title = "";
+  var sandbox_author = "";
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  canvas.style.aspectRatio = '16/9';
+
+  // function resizeCanvas() {
+  //   const dpr = window.devicePixelRatio || 1;
+  //   canvas.width = Math.round(window.innerWidth * dpr);
+  //   canvas.height = Math.round(window.innerHeight * dpr);
+  //   canvas.style.width = '100vw';
+  //   canvas.style.height = '100vh';
+  //   sandbox.load(sandbox.fragmentString);
+  // }
+  // resizeCanvas();
+
+  // let resizeTimer;
+  // window.addEventListener('resize', () => {
+  //   clearTimeout(resizeTimer);
+  //   resizeTimer = setTimeout(resizeCanvas, 150);
+  // });
+
+</script>
+
+</html>
