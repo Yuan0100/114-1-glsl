@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Camouflage Hybrid Download</title>
+  <script type="text/javascript"
+    src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      /* 避免出現捲軸 */
+    }
+
+    body {
+      background: #101515;
+    }
+
+    #glslCanvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      /* width: 100%; */
+      height: 100%;
+      /* 移除 CSS 中的 aspect-ratio，改由 JS 動態設定 */
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 移除 width, height 和 data-textures，改由 JS 控制 -->
+  <canvas id="glslCanvas" data-fragment-url="shaders/Camouflage-stripe.frag"></canvas>
+</body>
+<script>
+  var canvas = document.getElementById("glslCanvas");
+  var sandbox;
+
+  // --- 設定圖片路徑 ---
+  var imgUrl1 = "data/camouflage/formosan_clouded_leopard.png";
+  var imgUrl2 = "data/camouflage/formosan_clouded_leopard-depth.png";
+
+  // 1. 建立 Image 物件來預先載入圖片
+  var img = new Image();
+
+  img.onload = function () {
+    // 圖片載入完成後執行：
+
+    // 設定 Canvas 解析度為圖片原始尺寸 (Buffer Size)
+    canvas.width = this.naturalWidth;
+    canvas.height = this.naturalHeight;
+
+    // 設定 CSS aspect-ratio 以維持正確顯示比例 (Display Ratio)
+    canvas.style.aspectRatio = this.naturalWidth + " / " + this.naturalHeight;
+
+    // 設定 data-textures 屬性給 GlslCanvas 讀取
+    canvas.setAttribute("data-textures", imgUrl1 + "," + imgUrl2);
+
+    // 初始化 GlslCanvas
+    initSandbox();
+  };
+
+  // 開始載入圖片
+  img.src = imgUrl1;
+
+  function initSandbox() {
+    // 加入 { preserveDrawingBuffer: true } 以確保能截圖
+    sandbox = new GlslCanvas(canvas, {preserveDrawingBuffer: true});
+  }
+
+  // --- 按 'S' 鍵儲存圖片 (非同步防當機版) ---
+  function saveCanvas() {
+    // 使用 toBlob 而非 toDataURL，避免大圖造成瀏覽器凍結
+    canvas.toBlob(function (blob) {
+      // 建立下載連結
+      var link = document.createElement('a');
+      var timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      link.download = "camouflage-hybrid-" + timestamp + ".png";
+
+      // 建立 Blob URL
+      var url = URL.createObjectURL(blob);
+      link.href = url;
+
+      // 觸發下載
+      document.body.appendChild(link);
+      link.click();
+
+      // 清理資源
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, "image/png", 1.0); // 1.0 代表最高品質
+  }
+
+  window.addEventListener('keydown', function (e) {
+    // 按下 's' 或 'S' 鍵時觸發
+    if (e.key === 's' || e.key === 'S') {
+      saveCanvas();
+    }
+  });
+</script>
+
+</html>

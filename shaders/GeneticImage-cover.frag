@@ -13,11 +13,13 @@ uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
 
+uniform float u_grid_size;
+
 #define iTime u_time
 #define iResolution u_resolution
 #define iMouse u_mouse
 #define fragCoord gl_FragCoord.xy
-uniform sampler2D u_tex0;//../data/wave_wave.jpg
+uniform sampler2D u_tex0;
 uniform sampler2D u_buffer0;//FBO from previous iterated frame
 
 vec3 rgb2hsl(vec3 c);
@@ -34,7 +36,7 @@ bool pointInEllipse(vec2 center,vec2 radii,vec2 testPoint);
 #if defined(BUFFER_0)
 
 // --- CONTROL SWITCHES ---
-#define RENDER_DOTS
+// #define RENDER_DOTS
 #define USE_PALETTE
 // --- Shape Generation Switches ---
 #define GENERATE_TRIANGLES
@@ -44,7 +46,7 @@ bool pointInEllipse(vec2 center,vec2 radii,vec2 testPoint);
 // ---
 #define EVOLVE_FROM_GRADIENT
 #define MIN_CIRCLE_RADIUS.01// 最小半徑 (螢幕寬度的 1%)
-#define MAX_CIRCLE_RADIUS.1// 最大半徑 (螢幕寬度的 10%)
+#define MAX_CIRCLE_RADIUS.3// 最大半徑 (螢幕寬度的 10%)
 
 #define MUTATION_RATE.01// 0.5% chance to accept a worse color
 #define EVERY_PIXEL_SAME_COLOR
@@ -65,14 +67,21 @@ void main()
     // --- Image as Initialization ---
     // gl_FragColor=texture2D(u_tex0,imageUV);// Initialize with source image
     
-    // Gradient as initialization ---
-    vec3 colorTop=vec3(250./255.,220./255.,226./255.);// Pink (#FADCE2)
-    vec3 colorBottom=vec3(174./255.,203./255.,237./255.);// Blue (#AECBED)
+    // === 背景初始化選項 (請擇一使用) ===
     
-    // Mix colors based on the vertical position (imageUV.y)
+    // 選項 1: 漸層背景 (原本的設定)
+    
+    vec3 colorTop=vec3(250./255.,220./255.,226./255.);
+    vec3 colorBottom=vec3(174./255.,203./255.,237./255.);
     vec3 gradient=mix(colorBottom,colorTop,imageUV.y);
-    
     gl_FragColor=vec4(gradient,1.);
+    
+    // 選項 2: 純白背景
+    // gl_FragColor=vec4(vec3(.985),1.);
+    
+    // 選項 3: 透明背景 (RGBA 全部為 0)
+    // 下載後的 PNG 背景會是透明的，只有生成的圖形是不透明的
+    // gl_FragColor=vec4(0.);
     
     return;// Stop further processing for the first frame
   }
@@ -168,8 +177,47 @@ void main()
   #ifdef USE_PALETTE
   // --- Generate a color from the palette with added noise ---
   // This guarantees the color is always in a usable range.
+  
   vec3 colorPink=vec3(250./255.,220./255.,226./255.);// #FADCE2
   vec3 colorBlue=vec3(174./255.,203./255.,237./255.);// #AECBED
+  
+  // ===========================
+  // --- Alternative Color Palettes ---
+  // Uncomment one of the following palettes to use it
+  
+  // 1. RISO 經典風格 (紅 / 藍)
+  // vec3 colorPink=vec3(241./255.,80./255.,96./255.);// Riso Red
+  // vec3 colorBlue=vec3(0./255.,120./255.,191./255.);// Riso Blue
+  
+  // 2. 黑白映畫 (高對比)
+  // vec3 colorPink=vec3(.1,.1,.1);// Black (Dark Grey)
+  // vec3 colorBlue=vec3(.9,.9,.9);// White (Light Grey)
+  
+  // 3. 復古海報 (米黃 / 深褐)
+  // vec3 colorPink=vec3(245./255.,245./255.,220./255.);// Beige
+  // vec3 colorBlue=vec3(101./255.,67./255.,33./255.);// Dark Brown
+  
+  // 4. 賽博龐克 (螢光粉 / 青)
+  // vec3 colorPink=vec3(1.,0.,1.);// Magenta
+  // vec3 colorBlue=vec3(0.,1.,1.);// Cyan
+  
+  // 5. 森林植被 (深綠 / 淺綠)
+  // vec3 colorPink=vec3(144./255.,238./255.,144./255.);// Light Green
+  // vec3 colorBlue=vec3(34./255.,139./255.,34./255.);// Forest Green
+  
+  // 6. 夕陽漸層 (紫 / 橘)
+  // vec3 colorPink=vec3(255./255.,165./255.,0./255.);// Orange
+  // vec3 colorBlue=vec3(128./255.,0./255.,128./255.);// Purple
+  
+  // 7. 現代極簡 (水泥灰 / 亮黃)
+  // vec3 colorPink=vec3(255./255.,215./255.,0./255.);// Gold/Yellow
+  // vec3 colorBlue=vec3(112./255.,128./255.,144./255.);// Slate Grey
+  
+  // 8. 海軍風格 (深藍 / 金)
+  // vec3 colorPink=vec3(218./255.,165./255.,32./255.);// Goldenrod
+  // vec3 colorBlue=vec3(0./255.,0./255.,128./255.);// Navy Blue
+  
+  // ===========================
   
   // Randomly choose between pink and blue as the base
   vec3 baseColor;
@@ -201,18 +249,29 @@ vec4 prevColor=texture2D(u_buffer0,imageUV);
 gl_FragColor=prevColor;
 
 #ifdef RENDER_DOTS
-// --- Dot Grid Rendering Logic ---
-float gridSize=300.;
-vec2 cellCenterUV=(floor(imageUV*gridSize)+.5)/gridSize;
+// --- Dot Grid Rendering Logic (完全採用提供的程式碼邏輯) ---
+
+// 使用 uniform grid size，若未設定則給預設值
+float currentGridSize=(u_grid_size>0.)?u_grid_size:300.;
+
+// 根據長寬比調整網格密度，確保格子是正方形
+// aspectRatio 已在 main 開頭定義 (width / height)
+vec2 gridDensity=vec2(currentGridSize,currentGridSize/aspectRatio);
+
+vec2 cellCenterUV=(floor(imageUV*gridDensity)+.5)/gridDensity;
 vec3 targetColorAtCell=texture2D(u_tex0,cellCenterUV).rgb;
 float brightness=rgb2hsl(targetColorAtCell).z;
-float adjustedBrightness=pow(brightness,1.2);
-float minRadius=1.;
-float maxRadius=10.;
+
+// float adjustedBrightness=pow(brightness,1.);
+float adjustedBrightness=1.-pow(brightness,1.);
+
+float minRadius=0.;
+float maxRadius=1.;
 float dynamicRadius=minRadius+adjustedBrightness*(maxRadius-minRadius);
-vec2 gridUV=fract(imageUV*gridSize);
+
+vec2 gridUV=fract(imageUV*gridDensity);
 float distToCellCenter=distance(gridUV,vec2(.5));
-float feather=.5;
+float feather=.75;// 增加羽化
 float dotFactor=1.-smoothstep(dynamicRadius-feather,dynamicRadius+feather,distToCellCenter);
 
 vec4 trueColor=vec4(targetColorAtCell,1.);
@@ -220,7 +279,16 @@ vec4 trueColor=vec4(targetColorAtCell,1.);
 if(dotFactor>0.&&isInShape)
 {
   float prevDiff=length(trueColor.rgb-prevColor.rgb);
-  float testDiff=length(trueColor.rgb-testColor.rgb);
+  // --- MODIFICATION START ---
+  // 原本：比較「純墨水顏色」與目標的差異 (導致亮部畫不上去，因為墨水太深)
+  // float testDiff=length(trueColor.rgb-testColor.rgb);
+  
+  // 新增：先計算「墨水與背景混合後」的預期顏色
+  vec3 potentialColor=mix(prevColor.rgb,testColor.rgb,dotFactor);
+  
+  // 修改：比較「混合後的顏色」與目標的差異
+  float testDiff=length(trueColor.rgb-potentialColor);
+  // --- END MODIFICATION ---
   if(testDiff<prevDiff)
   {
     vec3 finalColor=mix(prevColor.rgb,testColor.rgb,dotFactor);
